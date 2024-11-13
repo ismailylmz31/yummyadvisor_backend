@@ -6,6 +6,8 @@ from .serializers import RegisterSerializer, LoginSerializer
 from rest_framework import generics, permissions
 from .models import CustomUser
 from .serializers import UserSerializer
+from django_ratelimit.decorators import ratelimit
+
 
 User = get_user_model()
 
@@ -14,6 +16,7 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
 class LoginView(APIView):
+    @ratelimit(key='ip', rate='5/m', block=True)  # Her IP için dakika başına 5 istek sınırı
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -39,3 +42,20 @@ class PasswordChangeView(APIView):
         user.set_password(new_password)
         user.save()
         return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)    
+    
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user    
+    
+
+class UserProfileUpdateView(generics.UpdateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
