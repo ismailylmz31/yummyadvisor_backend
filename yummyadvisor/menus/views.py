@@ -4,6 +4,10 @@ from .models import Menu, Dish
 from .serializers import MenuSerializer, DishSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from restaurants.models import Restaurant
+
 
 class MenuListCreateView(generics.ListCreateAPIView):
     queryset = Menu.objects.all()
@@ -37,3 +41,13 @@ class DishDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Dish.objects.all()
     serializer_class = DishSerializer
     permission_classes = [IsAdminUser]
+
+class MenuListView(generics.ListAPIView):
+    queryset = Menu.objects.all().select_related('restaurant').prefetch_related('dishes')
+    serializer_class = MenuSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['restaurant__name', 'name']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'restaurant__name']
+
+

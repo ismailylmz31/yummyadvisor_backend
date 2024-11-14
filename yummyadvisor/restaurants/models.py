@@ -27,6 +27,7 @@ class Review(models.Model):
     comment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.PositiveIntegerField(default=0)  # Yeni beğeni sayacı alanı
+    approved = models.BooleanField(default=False) # Moderasyon için yeni alan
 
     def __str__(self):
         return f"{self.user.username} - {self.restaurant.name} ({self.rating})"

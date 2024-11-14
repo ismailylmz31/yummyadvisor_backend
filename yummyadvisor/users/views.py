@@ -1,12 +1,11 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
-from .serializers import RegisterSerializer, LoginSerializer
-from rest_framework import generics, permissions
-from .models import CustomUser
-from .serializers import UserSerializer
 from django_ratelimit.decorators import ratelimit
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, FavoriteRestaurantSerializer
+from .models import CustomUser
+from restaurants.models import FavoriteRestaurant
 
 
 User = get_user_model()
@@ -59,3 +58,10 @@ class UserProfileUpdateView(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+class FavoriteRestaurantListView(generics.ListAPIView):
+    serializer_class = FavoriteRestaurantSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return FavoriteRestaurant.objects.filter(user=self.request.user)        

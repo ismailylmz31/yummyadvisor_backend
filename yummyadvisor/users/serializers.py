@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password
+from restaurants.models import FavoriteRestaurant  # Doğru import işlemi # FavoriteRestaurant modelini import edin
 
 User = get_user_model()
 
@@ -44,3 +45,9 @@ class LoginSerializer(serializers.Serializer):
                 'refresh': str(refresh),
             }
         raise serializers.ValidationError("Invalid credentials")
+
+
+class FavoriteRestaurantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FavoriteRestaurant
+        fields = ['id', 'user', 'restaurant']

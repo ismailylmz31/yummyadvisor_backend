@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from .models import Menu, Dish
+from decimal import Decimal
 
 class DishSerializer(serializers.ModelSerializer):
-    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.00'))
 
     class Meta:
         model = Dish
