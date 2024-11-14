@@ -1,7 +1,8 @@
 from rest_framework import generics, permissions, filters
+from django_filters import rest_framework as django_filters  # Burada farklı bir isimlendirme kullandık
 from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
-from .models import Restaurant, Review,FavoriteRestaurant
+from .models import Restaurant, Review, FavoriteRestaurant
 from .serializers import RestaurantSerializer, ReviewSerializer
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
@@ -11,10 +12,8 @@ from django.shortcuts import get_object_or_404
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from rest_framework.permissions import BasePermission
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from .serializers import FavoriteRestaurantSerializer
-
 
 class RestaurantListCreateView(generics.ListCreateAPIView):
     queryset = Restaurant.objects.all()
@@ -29,15 +28,25 @@ class RestaurantDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RestaurantSerializer
     permission_classes = [IsOwnerOrAdmin]
 
+class RestaurantFilter(django_filters.FilterSet):
+    min_rating = django_filters.NumberFilter(field_name='rating', lookup_expr='gte')  # Minimum rating filter
+    max_rating = django_filters.NumberFilter(field_name='rating', lookup_expr='lte')  # Maximum rating filter
+    location_contains = django_filters.CharFilter(field_name='location', lookup_expr='icontains')  # Location search
+
+    class Meta:
+        model = Restaurant
+        fields = ['category__name', 'min_rating', 'max_rating', 'location_contains']
+
 class RestaurantListView(generics.ListAPIView):
-    queryset = Restaurant.objects.all().select_related('category').prefetch_related('reviews')
+    queryset = Restaurant.objects.select_related('category').prefetch_related('reviews').all()
     serializer_class = RestaurantSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category__name', 'rating', 'location']
+    filterset_class = RestaurantFilter  # Yeni eklediğimiz filtre seti burada kullanılıyor
     search_fields = ['name', 'description']
     ordering_fields = ['rating', 'name']
 
-    @method_decorator(cache_page(60*15))  # 15 dakikalık önbellekleme
+    # Önbellekleme süresini 30 dakikaya çıkartmak için
+    @method_decorator(cache_page(60 * 30))  # 30 dakika cache
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
@@ -56,10 +65,11 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    @ratelimit(key='user', rate='3/m', block=True)  # Kullanıcı başına dakika başına 3 istek sınırı
+    @ratelimit(key='ip', rate='5/m', block=True)
     def perform_create(self, serializer):
         review = serializer.save(user=self.request.user)
-        review.restaurant.update_rating()  # Restoran puanını güncellemek için çağrı
+        review.restaurant.update_rating()
+
 
 class ReviewLikeView(APIView):
     def post(self, request, pk):
@@ -68,9 +78,7 @@ class ReviewLikeView(APIView):
         review.save()
         return Response({"message": "Review liked successfully", "likes": review.likes}, status=status.HTTP_200_OK)
 
-
-
-class FavoriteRestaurantView(generics.GenericAPIView):
+class FavoriteRestaurantView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, restaurant_id):
@@ -88,15 +96,13 @@ class FavoriteRestaurantView(generics.GenericAPIView):
             favorite.delete()
             return Response({"message": "Restaurant removed from favorites"}, status=status.HTTP_200_OK)
         return Response({"message": "Restaurant is not in your favorites"}, status=status.HTTP_400_BAD_REQUEST)
-    
 
 class TopReviewsView(generics.ListAPIView):
     serializer_class = ReviewSerializer
 
     def get_queryset(self):
         restaurant_id = self.kwargs['restaurant_id']
-        return Review.objects.filter(restaurant_id=restaurant_id).order_by('-likes')[:5]  # En çok beğenilen 5 yorumu getirir    
-
+        return Review.objects.filter(restaurant_id=restaurant_id).order_by('-likes')[:5]  # En çok beğenilen 5 yorumu getirir
 
 class AdvancedRestaurantListView(generics.ListAPIView):
     queryset = Restaurant.objects.all().select_related('category').prefetch_related('reviews')
@@ -104,8 +110,7 @@ class AdvancedRestaurantListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category__name', 'rating', 'location']
     search_fields = ['name', 'description']
-    ordering_fields = ['rating', 'name', 'location']        
-
+    ordering_fields = ['rating', 'name', 'location']
 
 class ReviewModerationView(generics.UpdateAPIView):
     queryset = Review.objects.all()
@@ -113,12 +118,11 @@ class ReviewModerationView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAdminUser]
 
     def perform_update(self, serializer):
-        serializer.save(approved=True)    
+        serializer.save(approved=True)
 
 class IsModeratorOrAdmin(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (request.user.is_admin or request.user.is_moderator)        
-    
+        return request.user.is_authenticated and (request.user.is_admin or request.user.is_moderator)
 
 class FavoriteRestaurantListCreateView(generics.ListCreateAPIView):
     serializer_class = FavoriteRestaurantSerializer
@@ -135,4 +139,4 @@ class FavoriteRestaurantDetailView(generics.RetrieveDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return FavoriteRestaurant.objects.filter(user=self.request.user)    
+        return FavoriteRestaurant.objects.filter(user=self.request.user)
