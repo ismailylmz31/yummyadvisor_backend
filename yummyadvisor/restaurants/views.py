@@ -16,9 +16,13 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from .serializers import FavoriteRestaurantSerializer
 
 class RestaurantListCreateView(generics.ListCreateAPIView):
-    queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated and not self.request.user.is_admin:
+            return Restaurant.objects.filter(owner=self.request.user)
+        return Restaurant.objects.all()
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -27,6 +31,12 @@ class RestaurantDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
     permission_classes = [IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated and not self.request.user.is_admin:
+            return Restaurant.objects.filter(owner=self.request.user)
+        return Restaurant.objects.all()
+
 
 class RestaurantFilter(django_filters.FilterSet):
     min_rating = django_filters.NumberFilter(field_name='rating', lookup_expr='gte')  # Minimum rating filter

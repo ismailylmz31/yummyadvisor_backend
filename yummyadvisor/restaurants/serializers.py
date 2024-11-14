@@ -6,7 +6,8 @@ from .models import FavoriteRestaurant
 class RestaurantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant
-        fields = ['id', 'name', 'category', 'owner', 'rating', 'location']
+        fields = ['id', 'name', 'category', 'owner', 'rating', 'location', 'address', 'contact_number', 'created_at', 'updated_at']
+        read_only_fields = ['owner', 'created_at', 'updated_at']
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:

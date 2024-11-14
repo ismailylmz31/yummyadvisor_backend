@@ -10,6 +10,10 @@ class Restaurant(models.Model):
     owner = models.ForeignKey(CustomUser, related_name='restaurants', on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     location = models.CharField(max_length=255, blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)  # Yeni alan
+    contact_number = models.CharField(max_length=15, blank=True, null=True)  # Yeni alan
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
