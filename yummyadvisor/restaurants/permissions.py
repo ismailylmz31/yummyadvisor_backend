@@ -1,25 +1,28 @@
-from rest_framework import permissions
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-class IsAdminOrReadOnly(permissions.BasePermission):
+class IsAdminOrReadOnly(BasePermission):
     """
-    Custom permission to only allow admins to edit objects.
+    Allow only admins to perform write operations, others can only read.
     """
-
     def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in SAFE_METHODS:
             return True
         return request.user.is_authenticated and request.user.is_admin
 
 
-class IsOwnerOrAdmin(permissions.BasePermission):
+class IsOwnerOrAdmin(BasePermission):
     """
-    Custom permission to allow only owners of an object or admins to edit it.
+    Allow only owners or admins to edit objects.
     """
-
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request, so we'll always allow GET, HEAD, or OPTIONS requests.
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in SAFE_METHODS:
             return True
+        return request.user.is_authenticated and (request.user.is_admin or obj.owner == request.user)
 
-        # Write permissions are only allowed to the owner of the object or admins.
-        return request.user.is_admin or obj.owner == request.user
+
+class IsManager(BasePermission):
+    """
+    Allow managers to manage their own restaurants.
+    """
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.is_manager and obj.owner == request.user
