@@ -1,5 +1,7 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions
 from restaurants.models import Restaurant
+from .permissions import IsOwnerOrAdmin
 from .models import Menu, Dish
 from .serializers import MenuSerializer, DishSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
@@ -12,17 +14,18 @@ from restaurants.models import Restaurant
 class MenuListCreateView(generics.ListCreateAPIView):
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['restaurant__name', 'name']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'restaurant__name']
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         restaurant_id = self.request.data.get('restaurant')
-        restaurant = Restaurant.objects.filter(id=restaurant_id).first()
+        restaurant = get_object_or_404(Restaurant, id=restaurant_id)
 
-        if not restaurant:
-            raise PermissionDenied("Invalid restaurant.")
-
-        # Check if the user is the owner of the restaurant or an admin
-        if not (self.request.user == restaurant.owner or self.request.user.is_admin):
+        # Check permissions with a custom method
+        if not IsOwnerOrAdmin().has_object_permission(self.request, self, restaurant):
             raise PermissionDenied("You do not have permission to add a menu to this restaurant.")
 
         serializer.save(restaurant=restaurant)

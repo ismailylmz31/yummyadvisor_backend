@@ -7,16 +7,32 @@ from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, Fa
 from .models import CustomUser
 from restaurants.models import FavoriteRestaurant
 from users.permissions import IsAdmin
-
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.mail import send_mail
+from rest_framework.permissions import AllowAny
 
 User = get_user_model()
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        activation_link = f"http://your-frontend-url/activate/{refresh}"
+        
+        send_mail(
+            "Activate Your Account",
+            f"Click here to activate your account: {activation_link}",
+            "noreply@yummyadvisor.com",
+            [user.email],
+        )
 
 class LoginView(APIView):
     @ratelimit(key='ip', rate='5/m', block=True)  # Her IP için dakika başına 5 istek sınırı
+    
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():

@@ -34,6 +34,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['127.0.0.1', 'localhost'])
 
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -160,6 +161,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
     'EXCEPTION_HANDLER': 'yummyadvisor.utils.exception_handler.custom_exception_handler',
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '10/min',
+        'anon': '5/min',
+    }
 }
 from datetime import timedelta
 

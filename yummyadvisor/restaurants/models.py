@@ -3,6 +3,7 @@ from django.conf import settings
 from categories.models import Category
 from users.models import CustomUser
 from django.db.models import Avg
+from django.utils import timezone
 
 class Restaurant(models.Model):
     name = models.CharField(max_length=100)
@@ -14,10 +15,22 @@ class Restaurant(models.Model):
     contact_number = models.CharField(max_length=15, blank=True, null=True)  # Yeni alan
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    opening_time = models.TimeField(blank=True, null=True)  # Yeni alan
+    closing_time = models.TimeField(blank=True, null=True)  # Yeni alan
 
     def __str__(self):
         return self.name
     
+    def is_open(self):
+        """
+        Check if the restaurant is currently open based on current time.
+        """
+        if not self.opening_time or not self.closing_time:
+            return True  # Çalışma saatleri belirtilmediyse her zaman açık
+        current_time = timezone.now().time()
+        return self.opening_time <= current_time <= self.closing_time
+
+
     def update_rating(self):
         avg_rating = self.reviews.aggregate(Avg('rating'))['rating__avg']
         self.rating = avg_rating if avg_rating else 0

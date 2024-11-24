@@ -15,6 +15,9 @@ from django.views.decorators.cache import cache_page
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
 from users.permissions import IsAdmin, IsManager, IsModerator
+from datetime import time
+
+# from yummyadvisor.restaurants import serializers
 
 
 
@@ -24,7 +27,7 @@ class RestaurantListCreateView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAuthenticated(), IsAdminOrReadOnly() | IsManager()]
+            return [permissions.IsAuthenticated(), IsAdminOrReadOnly()]
         return [permissions.AllowAny()]
 
     def get_queryset(self):
@@ -57,7 +60,7 @@ class RestaurantFilter(django_filters.FilterSet):
         fields = ['category__name', 'min_rating', 'max_rating', 'location_contains']
 
 class RestaurantListView(generics.ListAPIView):
-    queryset = Restaurant.objects.select_related('category').prefetch_related('reviews').all().order_by('id')
+    
     serializer_class = RestaurantSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = RestaurantFilter  # Yeni eklediğimiz filtre seti burada kullanılıyor
@@ -68,6 +71,13 @@ class RestaurantListView(generics.ListAPIView):
     @method_decorator(cache_page(60 * 30))  # 30 dakika cache
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
+    
+    def get_queryset(self):
+        current_time = timezone.now().time()
+        return Restaurant.objects.filter(
+            opening_time__lte=current_time,
+            closing_time__gte=current_time
+        ).select_related('category').prefetch_related('reviews').order_by('id')
 
 class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Restaurant.objects.prefetch_related('reviews').all()
@@ -93,15 +103,14 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def perform_create(self, serializer):
-        if not (1 <= serializer.validated_data['rating'] <= 5):
-            raise serializers.ValidationError("Rating must be between 1 and 5.")
+    def perform_create(self, serializer):       
         review = serializer.save(user=self.request.user)
         review.restaurant.update_rating()
 
 
 
 class ReviewLikeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     @ratelimit(key='user_or_ip', rate='10/m', block=True)
     def post(self, request, pk):
         review = get_object_or_404(Review, pk=pk)
@@ -116,17 +125,17 @@ class FavoriteRestaurantView(APIView):
         restaurant = get_object_or_404(Restaurant, id=restaurant_id)
         favorite, created = FavoriteRestaurant.objects.get_or_create(user=request.user, restaurant=restaurant)
         if created:
-            return Response({"message": "Restaurant added to favorites"}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"message": "Restaurant is already in your favorites"}, status=status.HTTP_200_OK)
+            return Response({"message": f"{restaurant.name} added to your favorites."}, status=status.HTTP_201_CREATED)
+        return Response({"message": f"{restaurant.name} is already in your favorites."}, status=status.HTTP_200_OK)
 
     def delete(self, request, restaurant_id):
         restaurant = get_object_or_404(Restaurant, id=restaurant_id)
         favorite = FavoriteRestaurant.objects.filter(user=request.user, restaurant=restaurant)
         if favorite.exists():
             favorite.delete()
-            return Response({"message": "Restaurant removed from favorites"}, status=status.HTTP_200_OK)
-        return Response({"message": "Restaurant is not in your favorites"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": f"{restaurant.name} removed from your favorites."}, status=status.HTTP_200_OK)
+        return Response({"error": f"{restaurant.name} is not in your favorites."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class TopReviewsView(generics.ListAPIView):
     serializer_class = ReviewSerializer
@@ -157,7 +166,7 @@ class IsModeratorOrAdmin(BasePermission):
 
 class FavoriteRestaurantListCreateView(generics.ListCreateAPIView):
     serializer_class = FavoriteRestaurantSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return FavoriteRestaurant.objects.filter(user=self.request.user)
@@ -165,7 +174,7 @@ class FavoriteRestaurantListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         restaurant = self.request.data.get('restaurant')
         if not restaurant:
-            return Response({"error": "Restaurant ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError({"error": "Restaurant ID is required"})
         serializer.save(user=self.request.user)
 
 class FavoriteRestaurantDetailView(generics.RetrieveDestroyAPIView):
