@@ -17,22 +17,22 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
-
     def perform_create(self, serializer):
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
         activation_link = f"http://your-frontend-url/activate/{refresh}"
-        
-        send_mail(
-            "Activate Your Account",
-            f"Click here to activate your account: {activation_link}",
-            "noreply@yummyadvisor.com",
-            [user.email],
-        )
+        # BURASI DEPLOYMENT OLUNCA AÇILACAK
+        # send_mail(
+        #     "Activate Your Account",
+        #     f"Click here to activate your account: {activation_link}",
+        #     "noreply@yummyadvisor.com",
+        #     [user.email],
+        # )
 
 class LoginView(APIView):
-    @ratelimit(key='ip', rate='5/m', block=True)  # Her IP için dakika başına 5 istek sınırı
-    
+    # BURASI DEPLOYMENT OLUNCA AÇILACAK
+    # @ratelimit(key='ip', rate='5/m', block=True)  # Her IP için dakika başına 5 istek sınırı 
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():

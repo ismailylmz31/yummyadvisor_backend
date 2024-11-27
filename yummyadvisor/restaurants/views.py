@@ -15,7 +15,7 @@ from django.views.decorators.cache import cache_page
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
 from users.permissions import IsAdmin, IsManager, IsModerator
-from datetime import time
+from datetime import time, timezone
 
 # from yummyadvisor.restaurants import serializers
 
@@ -80,7 +80,8 @@ class RestaurantListView(generics.ListAPIView):
         ).select_related('category').prefetch_related('reviews').order_by('id')
 
 class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Restaurant.objects.prefetch_related('reviews').all()
+    queryset = Review.objects.all()
+    #queryset = Restaurant.objects.prefetch_related('reviews').all()
     serializer_class = ReviewSerializer
     permission_classes = [IsOwnerOrAdmin]
 
@@ -98,14 +99,26 @@ class ReviewListCreateView(generics.ListCreateAPIView):
             return [IsAuthenticated()]
         return [permissions.AllowAny()]
 
-    @method_decorator(cache_page(60 * 5))
-    @ratelimit(key='user_or_ip', rate='10/m', block=True)
+    # bURRAYI DEPLOYMENT KISMINDA AÇIP REDİS SERVERİ KONTROL ETMEK GEREKİYOR
+    # @method_decorator(cache_page(60 * 5))
+    # @ratelimit(key='user_or_ip', rate='10/m', block=True)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def perform_create(self, serializer):       
-        review = serializer.save(user=self.request.user)
-        review.restaurant.update_rating()
+    def perform_create(self, serializer):
+        restaurant_id = self.request.data.get('restaurant')
+        if not restaurant_id:
+            raise serializers.ValidationError({"error": "Restaurant ID is required."})
+
+        try:
+            restaurant = Restaurant.objects.get(id=restaurant_id)
+        except Restaurant.DoesNotExist:
+            raise serializers.ValidationError({"error": "Invalid Restaurant ID."})
+
+        # Review oluştururken user ve restaurant bilgilerini ekleyin
+        serializer.save(user=self.request.user, restaurant=restaurant)
+        restaurant.update_rating()  # Restoranın değerlendirme puanını güncelleyin
+
 
 
 

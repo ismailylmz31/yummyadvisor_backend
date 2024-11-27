@@ -9,7 +9,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Restaurant
-        fields = ['id', 'name', 'category', 'owner', 'rating', 'location', 'address', 'contact_number', 'created_at', 'updated_at', 'total_reviews', 'opening_time', 'closing_time']
+        fields = ['id', 'name', 'category', 'owner', 'rating', 'location', 'address', 'contact_number', 'created_at', 'updated_at', 'total_reviews', 'opening_time', 'closing_time', 'is_open']
         read_only_fields = ['owner', 'created_at', 'updated_at']
 
     def get_total_reviews(self, obj):

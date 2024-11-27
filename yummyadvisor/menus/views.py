@@ -38,7 +38,17 @@ class MenuDetailView(generics.RetrieveUpdateDestroyAPIView):
 class DishListCreateView(generics.ListCreateAPIView):
     queryset = Dish.objects.all()
     serializer_class = DishSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        menu_id = self.request.data.get('menu_id')
+        menu = get_object_or_404(Menu, id=menu_id)
+
+        # Kullanıcı menünün bağlı olduğu restoranın sahibi mi?
+        if not IsOwnerOrAdmin().has_object_permission(self.request, self, menu.restaurant):
+            raise PermissionDenied("You do not have permission to add a dish to this menu.")
+
+        serializer.save(menu=menu)
 
 class DishDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Dish.objects.all()
