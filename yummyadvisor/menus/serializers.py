@@ -8,7 +8,7 @@ class DishSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dish
-        fields = ['id', 'name', 'price', 'description', 'menu_id', 'available']
+        fields = ['id', 'name', 'price', 'description', 'menu_id', 'available', 'photo']
         read_only_fields = ['menu']
 
 class MenuSerializer(serializers.ModelSerializer):

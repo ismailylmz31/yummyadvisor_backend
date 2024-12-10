@@ -4,8 +4,8 @@ from .models import Restaurant, Review, FavoriteRestaurant
 # Modellerimizi admin paneline kaydediyoruz.
 @admin.register(Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owner','category', 'rating', 'location','address', 'contact_number', 'created_at', 'is_open', 'opening_time', 'closing_time')  # Görüntülenecek sütunlar
-    search_fields = ('name', 'address', 'description')  # Arama yapılacak alanlar
+    list_display = ('name', 'owner','category', 'rating', 'location','address', 'contact_number', 'created_at', 'is_open', 'opening_time', 'closing_time', 'location')  # Görüntülenecek sütunlar
+    search_fields = ('name', 'address', 'description', 'location', 'about')  # Arama yapılacak alanlar
     list_filter = ('category', 'rating')  # Filtreleme seçenekleri
 
     def is_open_display(self, obj):

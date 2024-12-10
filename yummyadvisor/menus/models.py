@@ -18,5 +18,6 @@ class Dish(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)  # Eğer zaman bilgisi gerekiyorsa
     available = models.BooleanField(default=True)  # Örnek boolean alan
+    photo = models.ImageField(upload_to='dish_photos/', blank=True, null=True)
     def __str__(self):
         return self.name

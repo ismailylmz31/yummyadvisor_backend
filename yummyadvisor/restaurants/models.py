@@ -17,6 +17,9 @@ class Restaurant(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     opening_time = models.TimeField(blank=True, null=True)  # Yeni alan
     closing_time = models.TimeField(blank=True, null=True)  # Yeni alan
+    about = models.TextField(blank=True, null=True)  # Yeni alan
+    coordinates = models.JSONField(blank=True, null=True)  # Enlem ve boylam bilgileri
+    photo = models.ImageField(upload_to='restaurant_photos/', blank=True, null=True)
 
     def __str__(self):
         return self.name

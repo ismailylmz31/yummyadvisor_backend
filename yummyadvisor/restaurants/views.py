@@ -3,7 +3,7 @@ from django_filters import rest_framework as django_filters  # Burada farklı bi
 from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
 from .models import Restaurant, Review, FavoriteRestaurant
-from .serializers import RestaurantSerializer, ReviewSerializer,FavoriteRestaurantSerializer
+from .serializers import RestaurantSerializer, RestaurantStatisticsSerializer, ReviewSerializer,FavoriteRestaurantSerializer
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -200,4 +200,18 @@ class FavoriteRestaurantDetailView(generics.RetrieveDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         favorite = get_object_or_404(FavoriteRestaurant, pk=kwargs['pk'], user=request.user)
         favorite.delete()
-        return Response({"message": "Favorite restaurant removed"}, status=status.HTTP_200_OK)
+        return Response({"message": "Favorite restaurant removed"}, status=status.HTTP_200_OK)  
+    
+
+
+class RestaurantStatisticsView(generics.ListAPIView):
+    queryset = Restaurant.objects.prefetch_related('favorites').all()
+    serializer_class = RestaurantStatisticsSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class RestaurantsWithMenuView(generics.ListAPIView):
+    serializer_class = RestaurantSerializer
+
+    def get_queryset(self):
+        return Restaurant.objects.filter(menus__isnull=False).distinct()    

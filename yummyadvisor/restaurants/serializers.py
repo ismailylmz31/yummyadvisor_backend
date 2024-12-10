@@ -9,11 +9,15 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Restaurant
-        fields = ['id', 'name', 'category', 'owner', 'rating', 'location', 'address', 'contact_number', 'created_at', 'updated_at', 'total_reviews', 'opening_time', 'closing_time', 'is_open']
+        fields = [
+            'id', 'name', 'category', 'owner', 'rating', 'location', 'address', 'contact_number',
+            'created_at', 'updated_at', 'total_reviews', 'opening_time', 'closing_time',
+            'about', 'coordinates', 'photo', 'is_open'
+        ]
         read_only_fields = ['owner', 'created_at', 'updated_at']
 
     def get_total_reviews(self, obj):
-        return obj.reviews.count()  # İlgili restoranın yorum sayısını döndürür
+        return obj.reviews.count()
     
     def get_is_open(self, obj):
         return obj.is_open()
@@ -35,3 +39,17 @@ class FavoriteRestaurantSerializer(serializers.ModelSerializer):
         model = FavoriteRestaurant
         fields = ['id', 'user', 'restaurant']
         read_only_fields = ['user']  
+
+
+
+class RestaurantStatisticsSerializer(serializers.ModelSerializer):
+    favorite_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Restaurant
+        fields = ['id', 'name', 'favorite_count']
+
+    def get_favorite_count(self, obj):
+        return obj.favorites.count()  # Favorilere eklenme sayısını döndür  
+
+

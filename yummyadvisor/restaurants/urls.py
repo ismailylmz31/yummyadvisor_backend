@@ -3,6 +3,8 @@ from .views import (
     RestaurantListCreateView,
     RestaurantDetailView,
     RestaurantListView,
+    RestaurantStatisticsView,
+    RestaurantsWithMenuView,
     ReviewDetailView,
     ReviewListCreateView,
     ReviewLikeView,
@@ -27,4 +29,6 @@ urlpatterns = [
     path('top-reviews/<int:restaurant_id>/', TopReviewsView.as_view(), name='top-reviews'),
     path('advanced-list/', AdvancedRestaurantListView.as_view(), name='advanced-restaurant-list'),
     path('review-moderation/<int:pk>/', ReviewModerationView.as_view(), name='review-moderation'),
+    path('statistics/', RestaurantStatisticsView.as_view(), name='restaurant-statistics'),
+    path('with-menu/', RestaurantsWithMenuView.as_view(), name='restaurants-with-menu'),
 ]

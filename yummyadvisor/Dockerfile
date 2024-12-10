@@ -1,23 +1,29 @@
-# Python slim imajını kullan
-FROM python:3.10-slim
+# PostGIS image'ını temel al
+FROM postgis/postgis:latest
 
-# Çalışma dizinini ayarla
-WORKDIR /app
+# Paketleri güncelle ve GDAL kütüphanelerini yükle
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin \
+    libgdal-dev \
+    python3-gdal \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Gerekli dosyaları kopyala
-COPY requirements.txt requirements.txt
-COPY . .
+# GDAL ortam değişkenlerini ayarla
+ENV GDAL_DATA=/usr/share/gdal
+ENV PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:$PATH"
 
-# Python bağımlılıklarını yükle
-RUN pip install --no-cache-dir -r requirements.txt
+# Postgres kullanıcı ayarları
+USER postgres
 
-# Django için ortam değişkenlerini ayarla
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Varsayılan çalışma dizinini ayarla
+WORKDIR /var/lib/postgresql
 
-# Django statik dosyalarını topla
-RUN python manage.py collectstatic --noinput
+# Portu aç
+EXPOSE 5432
 
-# Django uygulamasını Gunicorn ile çalıştır
-CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:8080", "--timeout=60", "yummyadvisor.wsgi:application"]
+# Başlangıç komutunu ayarla
+CMD ["postgres"]
+
+
 

@@ -9,6 +9,6 @@ class MenuAdmin(admin.ModelAdmin):
 
 @admin.register(Dish)
 class DishAdmin(admin.ModelAdmin):
-    list_display = ('name', 'menu', 'price', 'available')  # Görüntülenecek sütunlar
+    list_display = ('name', 'menu', 'price', 'available', 'photo')  # Görüntülenecek sütunlar
     search_fields = ('name', 'description')
     list_filter = ('available',)
