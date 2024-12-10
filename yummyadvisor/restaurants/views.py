@@ -1,6 +1,9 @@
+from django.http import JsonResponse
 from rest_framework import generics, permissions, filters
 from django_filters import rest_framework as django_filters  # Burada farklı bir isimlendirme kullandık
 from django_filters.rest_framework import DjangoFilterBackend
+
+from yummyadvisor.utils.haversine import Haversine
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
 from .models import Restaurant, Review, FavoriteRestaurant
 from .serializers import RestaurantSerializer, RestaurantStatisticsSerializer, ReviewSerializer,FavoriteRestaurantSerializer
@@ -215,3 +218,34 @@ class RestaurantsWithMenuView(generics.ListAPIView):
 
     def get_queryset(self):
         return Restaurant.objects.filter(menus__isnull=False).distinct()    
+    
+
+
+
+def get_nearby_restaurants(request):
+    try:
+        user_latitude = float(request.GET.get('latitude'))
+        user_longitude = float(request.GET.get('longitude'))
+
+        # Mesafeye göre restoranları sıralıyoruz
+        restaurants = (
+            Restaurant.objects
+            .annotate(distance=Haversine(user_latitude, user_longitude))
+            .order_by('distance')[:10]  # En yakın 10 restoranı getir
+        )
+
+        # Restoranları JSON olarak döndürüyoruz
+        results = [
+            {
+                "name": restaurant.name,
+                "address": restaurant.address,
+                "latitude": restaurant.latitude,
+                "longitude": restaurant.longitude,
+                "distance": round(restaurant.distance, 2)  # Mesafeyi yuvarlayarak ekle
+            }
+            for restaurant in restaurants
+        ]
+        return JsonResponse({"restaurants": results}, status=200)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)    

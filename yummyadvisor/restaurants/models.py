@@ -18,7 +18,8 @@ class Restaurant(models.Model):
     opening_time = models.TimeField(blank=True, null=True)  # Yeni alan
     closing_time = models.TimeField(blank=True, null=True)  # Yeni alan
     about = models.TextField(blank=True, null=True)  # Yeni alan
-    coordinates = models.JSONField(blank=True, null=True)  # Enlem ve boylam bilgileri
+    latitude = models.FloatField()  # Enlem
+    longitude = models.FloatField()  # Boylam
     photo = models.ImageField(upload_to='restaurant_photos/', blank=True, null=True)
 
     def __str__(self):
