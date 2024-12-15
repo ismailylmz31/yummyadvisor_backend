@@ -2,8 +2,6 @@ from django.http import JsonResponse
 from rest_framework import generics, permissions, filters
 from django_filters import rest_framework as django_filters  # Burada farklı bir isimlendirme kullandık
 from django_filters.rest_framework import DjangoFilterBackend
-
-from yummyadvisor.utils.haversine import Haversine
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
 from .models import Restaurant, Review, FavoriteRestaurant
 from .serializers import RestaurantSerializer, RestaurantStatisticsSerializer, ReviewSerializer,FavoriteRestaurantSerializer
@@ -19,6 +17,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
 from users.permissions import IsAdmin, IsManager, IsModerator
 from datetime import time, timezone
+
 
 # from yummyadvisor.restaurants import serializers
 
@@ -111,12 +110,12 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         restaurant_id = self.request.data.get('restaurant')
         if not restaurant_id:
-            raise serializers.ValidationError({"error": "Restaurant ID is required."})
+            raise serializer.ValidationError({"error": "Restaurant ID is required."})
 
         try:
             restaurant = Restaurant.objects.get(id=restaurant_id)
         except Restaurant.DoesNotExist:
-            raise serializers.ValidationError({"error": "Invalid Restaurant ID."})
+            raise serializer.ValidationError({"error": "Invalid Restaurant ID."})
 
         # Review oluştururken user ve restaurant bilgilerini ekleyin
         serializer.save(user=self.request.user, restaurant=restaurant)
@@ -190,7 +189,7 @@ class FavoriteRestaurantListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         restaurant = self.request.data.get('restaurant')
         if not restaurant:
-            raise serializers.ValidationError({"error": "Restaurant ID is required"})
+            raise serializer.ValidationError({"error": "Restaurant ID is required"})
         serializer.save(user=self.request.user)
 
 class FavoriteRestaurantDetailView(generics.RetrieveDestroyAPIView):
@@ -224,28 +223,26 @@ class RestaurantsWithMenuView(generics.ListAPIView):
 
 def get_nearby_restaurants(request):
     try:
+        # Kullanıcıdan gelen enlem ve boylam
         user_latitude = float(request.GET.get('latitude'))
         user_longitude = float(request.GET.get('longitude'))
 
-        # Mesafeye göre restoranları sıralıyoruz
-        restaurants = (
-            Restaurant.objects
-            .annotate(distance=Haversine(user_latitude, user_longitude))
-            .order_by('distance')[:10]  # En yakın 10 restoranı getir
-        )
-
-        # Restoranları JSON olarak döndürüyoruz
-        results = [
-            {
+        # Mesafeleri hesaplayarak restoranları sıralama
+        restaurants = Restaurant.objects.all()
+        nearby_restaurants = []
+        for restaurant in restaurants:
+            distance = restaurant.calculate_distance(user_latitude, user_longitude)
+            nearby_restaurants.append({
                 "name": restaurant.name,
-                "address": restaurant.address,
                 "latitude": restaurant.latitude,
                 "longitude": restaurant.longitude,
-                "distance": round(restaurant.distance, 2)  # Mesafeyi yuvarlayarak ekle
-            }
-            for restaurant in restaurants
-        ]
-        return JsonResponse({"restaurants": results}, status=200)
+                "distance": round(distance, 2)  # Mesafeyi yuvarlayarak ekle
+            })
+
+        # Mesafeye göre sıralama
+        nearby_restaurants = sorted(nearby_restaurants, key=lambda x: x['distance'])
+
+        return JsonResponse({"restaurants": nearby_restaurants[:10]}, status=200)  # En yakın 10 restoranı döndür
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)    
+        return JsonResponse({"error": str(e)}, status=400)

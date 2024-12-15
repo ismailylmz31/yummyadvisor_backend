@@ -4,6 +4,7 @@ from categories.models import Category
 from users.models import CustomUser
 from django.db.models import Avg
 from django.utils import timezone
+from haversine import haversine, Unit
 
 class Restaurant(models.Model):
     name = models.CharField(max_length=100)
@@ -34,6 +35,13 @@ class Restaurant(models.Model):
         current_time = timezone.now().time()
         return self.opening_time <= current_time <= self.closing_time
 
+    def calculate_distance(self, user_latitude, user_longitude):
+        """
+        Kullanıcı konumuna olan mesafeyi kilometre cinsinden hesaplar.
+        """
+        restaurant_location = (self.latitude, self.longitude)
+        user_location = (user_latitude, user_longitude)
+        return haversine(restaurant_location, user_location, unit=Unit.KILOMETERS)
 
     def update_rating(self):
         avg_rating = self.reviews.aggregate(Avg('rating'))['rating__avg']

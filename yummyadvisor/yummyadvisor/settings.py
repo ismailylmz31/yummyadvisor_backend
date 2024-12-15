@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'menus',
     'drf_yasg',
     'corsheaders',
+    'utils',
+    
 ]
 
 
