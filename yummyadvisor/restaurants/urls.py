@@ -32,5 +32,5 @@ urlpatterns = [
     path('review-moderation/<int:pk>/', ReviewModerationView.as_view(), name='review-moderation'),
     path('statistics/', RestaurantStatisticsView.as_view(), name='restaurant-statistics'),
     path('with-menu/', RestaurantsWithMenuView.as_view(), name='restaurants-with-menu'),
-    path('api/nearby-restaurants/', views.get_nearby_restaurants, name='nearby-restaurants'),
+    path('nearby-restaurants/', views.get_nearby_restaurants, name='nearby-restaurants'),
 ]
