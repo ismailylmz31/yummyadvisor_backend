@@ -237,3 +237,11 @@ else:  # Geliştirme ortamında
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
+
+
+
+
+AUTH0_DOMAIN = 'dev-qbktbeao1xebuca3.eu.auth0.com'  # Auth0 Domain
+API_IDENTIFIER = 'https://listorant/api'  # API Audience
+PUBLIC_KEY = None
+JWT_ISSUER = None
