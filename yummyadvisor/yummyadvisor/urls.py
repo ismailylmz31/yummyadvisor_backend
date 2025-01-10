@@ -9,8 +9,7 @@ from rest_framework_simplejwt.views import (
 )
 from django.conf import settings
 from django.conf.urls.static import static
-
-from yummyadvisor.yummyadvisor.views import AuthCheckView
+from .views import AuthCheckView
 
 
 schema_view = get_schema_view(
