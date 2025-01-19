@@ -24,7 +24,7 @@ import os
 
 # Environ ayarları
 # Env değişkenlerini yükleme
-env = environ.Env(DEBUG=(bool, False))
+env = environ.Env(DEBUG=(bool, True))
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY')  # .env dosyasından SECRET_KEY yükleniyor
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'menus',
     'drf_yasg',
     'corsheaders',
+    'django_filters',
     'utils',
     
 ]
@@ -166,8 +167,28 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'user': '10/min',
         'anon': '5/min',
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }
+
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,  # Django session auth yerine token kullanımı
+    'JSON_EDITOR': True,  # JSON düzenleyici aktif et
+    'SHOW_REQUEST_HEADERS': True,
+    'DEFAULT_GENERATOR_CLASS': 'drf_yasg.generators.OpenAPISchemaGenerator',
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
+}
+
+
+
 from datetime import timedelta
 
 SIMPLE_JWT = {
@@ -245,3 +266,20 @@ AUTH0_DOMAIN = 'dev-qbktbeao1xebuca3.eu.auth0.com'  # Auth0 Domain
 API_IDENTIFIER = 'https://listorant/api'  # API Audience
 PUBLIC_KEY = None
 JWT_ISSUER = None
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'DEBUG',
+    },
+}

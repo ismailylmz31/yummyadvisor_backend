@@ -11,7 +11,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import AuthCheckView
 
-
 schema_view = get_schema_view(
     openapi.Info(
         title="YummyAdvisor API",
@@ -31,12 +30,12 @@ urlpatterns = [
     path('api/categories/', include('categories.urls')),
     path('api/restaurants/', include('restaurants.urls')),
     path('api/menus/', include('menus.urls')),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('auth-check/', AuthCheckView.as_view(), name='auth-check'),
 ]
+
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

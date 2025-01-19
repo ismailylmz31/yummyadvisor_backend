@@ -17,6 +17,9 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
 from users.permissions import IsAdmin, IsManager, IsModerator
 from datetime import time, timezone
+from drf_yasg.utils import swagger_auto_schema
+from datetime import datetime
+
 
 
 # from yummyadvisor.restaurants import serializers
@@ -74,12 +77,20 @@ class RestaurantListView(generics.ListAPIView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
     
-    def get_queryset(self):
-        current_time = timezone.now().time()
+    def get_queryset(self):    
+        current_time = datetime.now().time()
         return Restaurant.objects.filter(
             opening_time__lte=current_time,
             closing_time__gte=current_time
         ).select_related('category').prefetch_related('reviews').order_by('id')
+
+    
+   # def get_queryset(self):
+   #     current_time = timezone.now().time()
+   #     return Restaurant.objects.filter(
+   #         opening_time__lte=current_time,
+    #        closing_time__gte=current_time
+   #     ).select_related('category').prefetch_related('reviews').order_by('id')
 
 class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
@@ -192,11 +203,18 @@ class FavoriteRestaurantListCreateView(generics.ListCreateAPIView):
             raise serializer.ValidationError({"error": "Restaurant ID is required"})
         serializer.save(user=self.request.user)
 
+
+#def swagger_fake_view():
+ #   pass
+
+
 class FavoriteRestaurantDetailView(generics.RetrieveDestroyAPIView):
     serializer_class = FavoriteRestaurantSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return FavoriteRestaurant.objects.none()  # Swagger dokümantasyonu için boş queryset döndür
         return FavoriteRestaurant.objects.filter(user=self.request.user)
 
     def delete(self, request, *args, **kwargs):

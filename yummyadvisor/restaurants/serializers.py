@@ -1,7 +1,5 @@
 from rest_framework import serializers
-from .models import Restaurant
-from .models import Review
-from .models import FavoriteRestaurant
+from .models import Restaurant, Review, FavoriteRestaurant
 
 class RestaurantSerializer(serializers.ModelSerializer):
     total_reviews = serializers.SerializerMethodField()
@@ -12,7 +10,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'category', 'owner', 'rating', 'location', 'address', 'contact_number',
             'created_at', 'updated_at', 'total_reviews', 'opening_time', 'closing_time',
-            'about', 'coordinates', 'photo', 'is_open'
+            'about', 'photo', 'is_open', 'latitude', 'longitude'
         ]
         read_only_fields = ['owner', 'created_at', 'updated_at']
 
@@ -38,8 +36,7 @@ class FavoriteRestaurantSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteRestaurant
         fields = ['id', 'user', 'restaurant']
-        read_only_fields = ['user']  
-
+        read_only_fields = ['user']
 
 
 class RestaurantStatisticsSerializer(serializers.ModelSerializer):
@@ -50,6 +47,4 @@ class RestaurantStatisticsSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'favorite_count']
 
     def get_favorite_count(self, obj):
-        return obj.favorites.count()  # Favorilere eklenme sayısını döndür  
-
-
+        return obj.favorites.count()
