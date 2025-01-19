@@ -70,7 +70,7 @@ class RestaurantListView(generics.ListAPIView):
     ordering_fields = ['rating', 'name']
 
     # Önbellekleme süresini 30 dakikaya çıkartmak için
-    @method_decorator(cache_page(60 * 30))  # 30 dakika cache
+    #@method_decorator(cache_page(60 * 30))  # 30 dakika cache
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
     
